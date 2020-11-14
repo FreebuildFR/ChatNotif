@@ -1,0 +1,4 @@
+name: ChatNotif
+version: ${project.version}
+main: fr.freebuild.chatnotif.bungee.ChatNotif
+author: EpiCanard

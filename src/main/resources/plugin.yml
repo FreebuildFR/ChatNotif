@@ -1,0 +1,5 @@
+name: ChatNotif
+version: ${project.version}
+main: fr.freebuild.chatnotif.spigot.ChatNotif
+depends: [DeluxeChat]
+author: EpiCanard
