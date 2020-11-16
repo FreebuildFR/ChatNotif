@@ -48,7 +48,7 @@ public class ChatNotif extends JavaPlugin implements Listener {
    * @param event Event sent by DeluxeChat
    */
   @EventHandler
-  public void DeluxeChat(DeluxeChatEvent event) {
+  public void DeluxeChat(final DeluxeChatEvent event) {
     if (event.isCancelled()) {
       return;
     }
@@ -56,27 +56,32 @@ public class ChatNotif extends JavaPlugin implements Listener {
     event.setCancelled(true);
     event.getRecipients().clear();
 
-    final String format = getPlayerFormat(event.getPlayer(), event.getDeluxeFormat());
+    final FancyMessage fm = this.deluxeChat.getFancyChatFormat(event.getPlayer(), event.getDeluxeFormat());
+    final String message = String.valueOf(fm.getLastColor()) + fm.getChatColor() + event.getChatMessage();
+    final String format = serializeFormat(fm);
 
-    this.handleSendingChatMessage(event.getChatMessage(), format);
-    this.bungeeListener.sendPluginMessage(event.getPlayer(), format, event.getChatMessage(), DeluxeChat.getServerName());
+    this.handleSendingChatMessage(message, format, fm.getChatColor());
+    this.bungeeListener.sendPluginMessage(event.getPlayer(), format, message, fm.getChatColor(), DeluxeChat.getServerName());
   }
 
   /**
    * Send message in chat of current server
    *
-   * @param message Message to send
+   * @param message   Message to send
+   * @param format    Format to use with message
+   * @param chatColor Color of chat to set after tag of player
    */
-  public void handleSendingChatMessage(final String message, final String format) {
+  public void handleSendingChatMessage(final String message, final String format, final String chatColor) {
     final Map<Player, String> players = this.getTaggedPlayers(message);
     final CompatibilityManager chat = deluxeChat.getChat();
+    final String color = (chatColor == null || chatColor.isEmpty()) ? ChatColor.RESET.toString() : chatColor;
 
     for (Player player : Bukkit.getOnlinePlayers()) {
 
       String msg = message;
       if (players.containsKey(player)) {
         final String m = players.get(player);
-        msg = msg.replace(m, ChatColor.RED + m + ChatColor.RESET);
+        msg = msg.replace(m, ChatColor.RED + m + color);
       }
 
       final Set<Player> set = new HashSet<Player>();
@@ -110,13 +115,12 @@ public class ChatNotif extends JavaPlugin implements Listener {
   }
 
   /**
-   * Get DeluxeChat format of wanted player
-   * @param player        Player that sent the message
-   * @param deluxeFormat  Base event DeluxeFromat
-   * @return              Return the format serialized
+   * Serialize DeluxeChat format
+   *
+   * @param fm  FancyMessage format
+   * @return    Return the format serialized
    */
-  private String getPlayerFormat(final Player player, final DeluxeFormat deluxeFormat) {
-    final FancyMessage fm = this.deluxeChat.getFancyChatFormat(player, deluxeFormat);
+  private String serializeFormat(final FancyMessage fm) {
     String format = fm.toJSONString().replace("%server%", "");
 
     format = this.deluxeChat.getChat().setHexColors(format);

@@ -37,12 +37,14 @@ public class ChatNotif extends Plugin implements Listener {
     final ByteArrayDataInput in = ByteStreams.newDataInput(bytes);
     final String format = in.readUTF();
     final String message = in.readUTF();
+    final String chatColor = in.readUTF();
     final String server = in.readUTF();
     final List<String> whitelist = Arrays.asList(in.readUTF().split(","));
 
     final ByteArrayDataOutput out = ByteStreams.newDataOutput();
     out.writeUTF(format);
     out.writeUTF(message);
+    out.writeUTF(chatColor);
     out.writeUTF(server);
 
     return new Pair<List<String>, byte[]>(whitelist, out.toByteArray());

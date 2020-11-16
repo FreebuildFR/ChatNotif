@@ -37,12 +37,13 @@ public class BungeeListener implements PluginMessageListener {
     final ByteArrayDataInput in = ByteStreams.newDataInput(bytes);
     final String format = in.readUTF();
     final String message = in.readUTF();
+    final String chatColor = in.readUTF();
     final String server = in.readUTF();
 
     if (DeluxeChat.useServerWhitelist() && !DeluxeChat.getServerWhitelist().contains(server)) {
       return;
     }
-    this.plugin.handleSendingChatMessage(message, format);
+    this.plugin.handleSendingChatMessage(message, format, chatColor);
   }
 
 
@@ -52,9 +53,10 @@ public class BungeeListener implements PluginMessageListener {
    * @param player      Player used to send message
    * @param format      Format of message
    * @param message     Message to send on other servers
+   * @param chatColor   Color of chat to use
    * @param serverName  Name of current server
    */
-  public void sendPluginMessage(final Player player, final String format, final String message, final String serverName) {
+  public void sendPluginMessage(final Player player, final String format, final String message, final String chatColor, final String serverName) {
     if (!DeluxeChat.useBungee()) {
       return;
     }
@@ -63,6 +65,7 @@ public class BungeeListener implements PluginMessageListener {
       final ByteArrayDataOutput out = ByteStreams.newDataOutput();
       out.writeUTF(format);
       out.writeUTF(message);
+      out.writeUTF(chatColor);
       out.writeUTF(serverName);
       out.writeUTF(DeluxeChat.getServerWhitelist().stream().collect(Collectors.joining(",")));
 
