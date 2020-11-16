@@ -1,5 +1,7 @@
 package fr.freebuild.chatnotif.spigot;
 
+import java.util.stream.Collectors;
+
 import com.google.common.io.ByteArrayDataInput;
 import com.google.common.io.ByteArrayDataOutput;
 import com.google.common.io.ByteStreams;
@@ -53,11 +55,16 @@ public class BungeeListener implements PluginMessageListener {
    * @param serverName  Name of current server
    */
   public void sendPluginMessage(final Player player, final String format, final String message, final String serverName) {
+    if (!DeluxeChat.useBungee()) {
+      return;
+    }
+
     try {
       final ByteArrayDataOutput out = ByteStreams.newDataOutput();
       out.writeUTF(format);
       out.writeUTF(message);
       out.writeUTF(serverName);
+      out.writeUTF(DeluxeChat.getServerWhitelist().stream().collect(Collectors.joining(",")));
 
       player.sendPluginMessage(this.plugin, BungeeChannel.CHAT.getChannel(), out.toByteArray());
     } catch (Exception ex) {
