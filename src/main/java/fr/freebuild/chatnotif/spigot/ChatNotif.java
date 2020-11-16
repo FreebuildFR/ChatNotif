@@ -106,6 +106,7 @@ public class ChatNotif extends JavaPlugin implements Listener {
     final String[] words = message.split(" ");
 
     for (String m : words) {
+      m = m.replaceAll("(§[0-9a-frlonmk])", "");
       final Player p = Bukkit.getPlayerExact(m);
       if (p != null && p.isOnline() && !players.containsKey(p)) {
         players.put(p, m);
