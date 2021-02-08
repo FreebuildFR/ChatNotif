@@ -1,5 +1,6 @@
 package fr.freebuild.chatnotif.spigot;
 
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 import com.google.common.io.ByteArrayDataInput;
@@ -35,6 +36,8 @@ public class BungeeListener implements PluginMessageListener {
     }
 
     final ByteArrayDataInput in = ByteStreams.newDataInput(bytes);
+    final UUID author = UUID.fromString(in.readUTF());
+    final boolean isExempt = in.readUTF().equals("1");
     final String format = in.readUTF();
     final String message = in.readUTF();
     final String chatColor = in.readUTF();
@@ -43,7 +46,7 @@ public class BungeeListener implements PluginMessageListener {
     if (DeluxeChat.useServerWhitelist() && !DeluxeChat.getServerWhitelist().contains(server)) {
       return;
     }
-    this.plugin.handleSendingChatMessage(message, format, chatColor);
+    this.plugin.handleSendingChatMessage(this.plugin.getOnlinePlayersNotIgnored(author, isExempt), message, format, chatColor);
   }
 
 
@@ -63,6 +66,8 @@ public class BungeeListener implements PluginMessageListener {
 
     try {
       final ByteArrayDataOutput out = ByteStreams.newDataOutput();
+      out.writeUTF(player.getUniqueId().toString());
+      out.writeUTF(player.hasPermission("essentials.chat.ignoreexempt") ? "1" : "0");
       out.writeUTF(format);
       out.writeUTF(message);
       out.writeUTF(chatColor);

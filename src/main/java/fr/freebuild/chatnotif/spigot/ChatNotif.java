@@ -1,15 +1,13 @@
 package fr.freebuild.chatnotif.spigot;
 
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
-
+import com.earth2me.essentials.Essentials;
+import com.earth2me.essentials.User;
+import com.earth2me.essentials.UserData;
+import fr.freebuild.chatnotif.bungee.BungeeChannel;
 import me.clip.deluxechat.DeluxeChat;
 import me.clip.deluxechat.compatibility.CompatibilityManager;
 import me.clip.deluxechat.events.DeluxeChatEvent;
 import me.clip.deluxechat.fanciful.FancyMessage;
-import me.clip.deluxechat.objects.DeluxeFormat;
 import net.md_5.bungee.api.ChatColor;
 import org.bukkit.Bukkit;
 import org.bukkit.Sound;
@@ -18,10 +16,14 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.plugin.java.JavaPlugin;
 
-import fr.freebuild.chatnotif.bungee.BungeeChannel;
+import java.lang.reflect.Field;
+import java.util.*;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public class ChatNotif extends JavaPlugin implements Listener {
   private DeluxeChat deluxeChat;
+  private Essentials essentials;
   private BungeeListener bungeeListener;
 
   @Override
@@ -29,6 +31,7 @@ public class ChatNotif extends JavaPlugin implements Listener {
     this.bungeeListener = new BungeeListener(this);
 
     this.deluxeChat = (DeluxeChat)Bukkit.getPluginManager().getPlugin("DeluxeChat");
+    this.essentials = (Essentials)Bukkit.getPluginManager().getPlugin("Essentials");
     Bukkit.getPluginManager().registerEvents(this, this);
 
     this.getServer().getMessenger().registerOutgoingPluginChannel(this, BungeeChannel.CHAT.getChannel());
@@ -54,14 +57,14 @@ public class ChatNotif extends JavaPlugin implements Listener {
     }
 
     event.setCancelled(true);
-    event.getRecipients().clear();
 
     final FancyMessage fm = this.deluxeChat.getFancyChatFormat(event.getPlayer(), event.getDeluxeFormat());
     final String message = String.valueOf(fm.getLastColor()) + fm.getChatColor() + event.getChatMessage();
     final String format = serializeFormat(fm);
 
-    this.handleSendingChatMessage(message, format, fm.getChatColor());
+    this.handleSendingChatMessage(event.getRecipients(), message, format, fm.getChatColor());
     this.bungeeListener.sendPluginMessage(event.getPlayer(), format, message, fm.getChatColor(), DeluxeChat.getServerName());
+    event.getRecipients().clear();
   }
 
   /**
@@ -71,12 +74,12 @@ public class ChatNotif extends JavaPlugin implements Listener {
    * @param format    Format to use with message
    * @param chatColor Color of chat to set after tag of player
    */
-  public void handleSendingChatMessage(final String message, final String format, final String chatColor) {
+  public void handleSendingChatMessage(final Set<Player> recipients, final String message, final String format, final String chatColor) {
     final Map<Player, String> players = this.getTaggedPlayers(message);
     final CompatibilityManager chat = deluxeChat.getChat();
     final String color = (chatColor == null || chatColor.isEmpty()) ? ChatColor.RESET.toString() : chatColor;
 
-    for (Player player : Bukkit.getOnlinePlayers()) {
+    for (Player player : recipients) {
 
       String msg = message;
       if (players.containsKey(player)) {
@@ -93,6 +96,40 @@ public class ChatNotif extends JavaPlugin implements Listener {
         player.playSound(player.getLocation(), Sound.ENTITY_EXPERIENCE_ORB_PICKUP, 1.0F, 1.0F);
       }
     }
+  }
+
+  /**
+   * List online players not ignoring author of message
+   *
+   * @param author Player to check if it is ignored
+   * @param isExempt Boolean to define if this player can't be ignored
+   */
+  public Set<Player> getOnlinePlayersNotIgnored(final UUID author, final boolean isExempt) {
+    Stream<? extends Player> playersStream = Bukkit.getOnlinePlayers().stream();
+
+    if (this.essentials != null && !isExempt) {
+      playersStream = playersStream.filter(player -> !this.isPlayerIgnored(player.getUniqueId(), author));
+    }
+    return playersStream.collect(Collectors.toSet());
+  }
+
+  /**
+   * Check if a player should be ignored
+   *
+   * @param player Player to verify if it must ignore the other player
+   * @param ignored Player to check if it must be ignored
+   */
+  private boolean isPlayerIgnored(final UUID player, final UUID ignored) {
+    final User user = this.essentials.getUser(player);
+
+    try {
+      final Field field = UserData.class.getDeclaredField("ignoredPlayers");
+      field.setAccessible(true);
+      return ((List<UUID>) field.get(user)).contains(ignored);
+    } catch (Exception e) {
+      e.printStackTrace();
+  	}
+    return false;
   }
 
   /**
@@ -129,4 +166,3 @@ public class ChatNotif extends JavaPlugin implements Listener {
     return format;
   }
 }
-

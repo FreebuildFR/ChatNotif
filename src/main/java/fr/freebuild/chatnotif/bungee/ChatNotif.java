@@ -35,6 +35,8 @@ public class ChatNotif extends Plugin implements Listener {
    */
   public Pair<List<String>, byte[]> extractDatas(final byte[] bytes) throws Exception {
     final ByteArrayDataInput in = ByteStreams.newDataInput(bytes);
+    final String author = in.readUTF();
+    final String exempt = in.readUTF();
     final String format = in.readUTF();
     final String message = in.readUTF();
     final String chatColor = in.readUTF();
@@ -42,6 +44,8 @@ public class ChatNotif extends Plugin implements Listener {
     final List<String> whitelist = Arrays.asList(in.readUTF().split(","));
 
     final ByteArrayDataOutput out = ByteStreams.newDataOutput();
+    out.writeUTF(author);
+    out.writeUTF(exempt);
     out.writeUTF(format);
     out.writeUTF(message);
     out.writeUTF(chatColor);
