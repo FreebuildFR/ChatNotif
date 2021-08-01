@@ -122,14 +122,7 @@ public class ChatNotif extends JavaPlugin implements Listener {
   private boolean isPlayerIgnored(final UUID player, final UUID ignored) {
     final User user = this.essentials.getUser(player);
 
-    try {
-      final Field field = UserData.class.getDeclaredField("ignoredPlayers");
-      field.setAccessible(true);
-      return ((List<UUID>) field.get(user)).contains(ignored);
-    } catch (Exception e) {
-      e.printStackTrace();
-  	}
-    return false;
+    return  user._getIgnoredPlayers().contains(ignored);
   }
 
   /**
